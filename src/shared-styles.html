@@ -9,11 +9,18 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 
 <!-- shared styles for all views -->
 <dom-module id="shared-styles">
   <template>
-    <style>
+    <style include="iron-flex iron-flex-alignment iron-flex-reverse iron-flex-factors iron-positioning">
+
+      :host {
+        box-sizing: border-box;
+      }
+
       * {
         box-sizing: border-box;
         outline: none;
@@ -45,6 +52,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         color: #212121;
         font-size: 22px;
       }
+
     </style>
   </template>
 </dom-module>
