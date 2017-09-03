@@ -1,0 +1,271 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="auth-view">
+
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+        height: 100%;
+      }
+
+      .wrapper {
+        height: 100%;
+        padding: 24px;
+      }
+
+      .user-info {
+        border: 1px solid #CCC;
+        clear: both;
+        margin: 0 auto 20px;
+        max-width: 400px;
+        padding: 10px;
+        text-align: left;
+      }
+
+      .photo-container {
+        background-color: #EEE;
+        border: 1px solid #CCC;
+        float: left;
+        height: 80px;
+        margin-right: 10px;
+        width: 80px;
+      }
+
+      #photo {
+        height: 80px;
+        margin: 0;
+        width: 80px;
+      }
+    </style>
+
+    <link type="text/css" rel="stylesheet" href="../firebaseui/firebaseui.css" />
+
+    <div class="wrapper layout vertical center">
+
+      <div id="loading">Loading...</div>
+
+      <div id="loaded" class="hidden">
+
+        <div id="userSignedIn" class="hidden">
+          <div class="layout horizontal user-info">
+            <div class="photo-container">
+              <img id="photo">
+            </div>
+            <div class="layout vertical">
+              <div id="name"></div>
+              <div id="email"></div>
+              <div id="phone"></div>
+            </div>
+          </div>
+          <p class="layout horizontal center-justified">
+            <button on-click="__signOutButtonOnClick">Sign Out</button>
+            <button on-click="__deleteAccountButtonOnClick">Delete account</button>
+          </p>
+        </div>
+
+        <div id="userSignedOut" class="hidden">
+          <h4>You are signed out.</h4>
+          <fieldset>
+            <legend>Configuration</legend>
+            reCAPTCHA mode for Phone Auth:
+            <label for="recaptchaNormal">
+              <input type="radio" id="recaptchaNormal" name="recaptcha" value="normal" checked
+                     on-change="__recaptchaRadioOnChange">
+              Normal
+            </label>
+            <label for="recaptchaInvisible">
+              <input type="radio" id="recaptchaInvisible" name="recaptcha" value="invisible"
+                     on-change="__recaptchaRadioOnChange">
+              Invisible
+            </label>
+          </fieldset>
+          <p class="layout horizontal center-justified">
+            <button id="sign-in-with-redirect">Sign In with Redirect</button>
+            <button id="sign-in-with-popup">Sign In with Popup</button>
+          </p>
+          <div>
+            <h5 class="layout horizontal center-justified">Single Page Application mode:</h5>
+            <div id="firebaseuiContainer"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </template>
+
+  <script>
+    class AuthView extends Polymer.Element {
+      static get is() {
+        return 'auth-view';
+      }
+
+      //----------------------------------------------------------------------
+      //
+      //  Constructors
+      //
+      //----------------------------------------------------------------------
+
+      constructor() {
+        super();
+
+        this.__firebaseui = undefined;
+      }
+
+      //----------------------------------------------------------------------
+      //
+      //  Lifecycle callbacks
+      //
+      //----------------------------------------------------------------------
+
+      ready() {
+        super.ready();
+
+        // FirebaseUIウィジェットをFirebaseで初期化
+        this.__firebaseui = new firebaseui.auth.AuthUI(firebase.auth());
+
+        firebase.auth().onAuthStateChanged(this.__firebaseOnAuthStateChanged.bind(this));
+      }
+
+      //----------------------------------------------------------------------
+      //
+      //  Internal methods
+      //
+      //----------------------------------------------------------------------
+
+      __getUiConfig() {
+        const recaptchaValue = this.shadowRoot.querySelector(
+          'input[name="recaptcha"]:checked').value;
+
+        return {
+          'callbacks': {
+            // ユーザーのサインインが成功した際にコールされる
+            'signInSuccess': function (user, credential, redirectUrl) {
+              this.__handleSignedInUser(user);
+              return false; // リダイレクトはしない
+            }
+          },
+          // IDPプロバイダのサインインフローをポップアップで開く
+          'signInFlow': 'popup',
+          'signInOptions': [
+            // TODO(developer): Remove the providers you don't need for your app.
+            {
+              provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+              scopes: ['https://www.googleapis.com/auth/plus.login']
+            },
+            {
+              provider: firebase.auth.FacebookAuthProvider.PROVIDER_ID,
+              scopes: [
+                'public_profile',
+                'email',
+                'user_likes',
+                'user_friends'
+              ]
+            },
+            firebase.auth.TwitterAuthProvider.PROVIDER_ID,
+            firebase.auth.GithubAuthProvider.PROVIDER_ID,
+            {
+              provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+              // Whether the display name should be displayed in Sign Up page.
+              requireDisplayName: true
+            },
+            {
+              provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
+              recaptchaParameters: {
+                size: recaptchaValue
+              }
+            }
+          ],
+          // Terms of service url.
+          'tosUrl': 'https://www.google.com'
+        };
+      }
+
+      /**
+       * ユーザーがサインインした状態のUI表示を行います。
+       * @param user
+       */
+      __handleSignedInUser(user) {
+        this.$.userSignedIn.style.display = 'block';
+        this.$.userSignedOut.style.display = 'none';
+        this.$.name.textContent = user.displayName;
+        this.$.email.textContent = user.email;
+        this.$.phone.textContent = user.phoneNumber;
+        if (user.photoURL) {
+          this.$.photo.src = user.photoURL;
+          this.$.photo.style.display = 'block';
+        } else {
+          this.$.photo.style.display = 'none';
+        }
+      }
+
+      /**
+       * ユーザーがサインアウトした状態のUI表示を行います。
+       */
+      __handleSignedOutUser() {
+        this.$.userSignedIn.style.display = 'none';
+        this.$.userSignedOut.style.display = 'block';
+        this.__firebaseui.start(this.$.firebaseuiContainer, this.__getUiConfig());
+      }
+
+      /**
+       * ユーザーによってreCAPTCHAの設定が変更された際の処理を行います。
+       */
+      __handleRecaptchaConfigChange() {
+        // 設定が変更されたのでFirebaseUIのリセットを行う
+        this.__firebaseui.reset();
+        this.__firebaseui.start(this.$.firebaseuiContainer, this.__getUiConfig());
+      }
+
+      /**
+       * ユーザーアカウントを削除します。
+       */
+      __deleteAccount() {
+        firebase.auth().currentUser.delete().catch((err) => {
+          // ユーザーの認証情報が古すぎる場合、再度サインインが必要
+          if (err.code == 'auth/requires-recent-login') {
+            firebase.auth().signOut().then(() => {
+              // UIがサインアウト状態に変化した後にメッセージが表示されるようsetTimeout()している
+              setTimeout(() => {
+                alert('Please sign in again to delete your account.');
+              }, 1);
+            });
+          }
+        });
+      }
+
+      //----------------------------------------------------------------------
+      //
+      //  Event handlers
+      //
+      //----------------------------------------------------------------------
+
+      __firebaseOnAuthStateChanged(user) {
+        this.$.loading.style.display = 'none';
+        this.$.loaded.style.display = 'block';
+        user ? this.__handleSignedInUser(user) : this.__handleSignedOutUser();
+      }
+
+      __signOutButtonOnClick(e) {
+        firebase.auth().signOut();
+      }
+
+      __deleteAccountButtonOnClick(e) {
+        this.__deleteAccount();
+      }
+
+      __recaptchaRadioOnChange(e) {
+        this.__handleRecaptchaConfigChange();
+      }
+
+    }
+
+    window.customElements.define(AuthView.is, AuthView);
+  </script>
+
+</dom-module>
+
