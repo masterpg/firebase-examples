@@ -80,6 +80,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         route="{{route}}"
         pattern="[[rootPath]]:page"
         data="{{routeData}}"
+        query-params="{{queryParams}}"
         tail="{{subroute}}"></app-route>
 
     <app-drawer-layout fullbleed narrow="{{narrow}}">
@@ -134,6 +135,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           },
           routeData: Object,
           subroute: String,
+          queryParams: Object,
           // This shouldn't be neccessary, but the Analyzer isn't picking up
           // Polymer.Element#rootPath
           rootPath: String,
@@ -147,6 +149,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _routePageChanged(page) {
+        console.log('route:', this.route, ', routeData:', this.routeData , ', subroute:', this.subroute);
+
         // If no page was found in the route data, page will be an empty string.
         // Deault to 'view1' in that case.
         this.page = page || 'view1';

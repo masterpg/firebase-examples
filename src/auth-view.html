@@ -43,7 +43,7 @@
       }
     </style>
 
-    <link type="text/css" rel="stylesheet" href="../firebaseui/firebaseui.css" />
+    <link type="text/css" rel="stylesheet" href="../firebaseui/firebaseui.css"/>
 
     <div class="wrapper layout vertical center">
 
@@ -86,7 +86,7 @@
           </fieldset>
           <p class="layout horizontal center-justified">
             <button id="sign-in-with-redirect">Sign In with Redirect</button>
-            <button id="sign-in-with-popup">Sign In with Popup</button>
+            <button id="sign-in-with-popup" on-click="__signInWithPopupButtonOnClick">Sign In with Popup</button>
           </p>
           <div>
             <h5 class="layout horizontal center-justified">Single Page Application mode:</h5>
@@ -113,7 +113,7 @@
       constructor() {
         super();
 
-        this.__firebaseui = undefined;
+        this.__authUI = undefined;
       }
 
       //----------------------------------------------------------------------
@@ -126,7 +126,7 @@
         super.ready();
 
         // FirebaseUIウィジェットをFirebaseで初期化
-        this.__firebaseui = new firebaseui.auth.AuthUI(firebase.auth());
+        this.__authUI = new firebaseui.auth.AuthUI(firebase.auth());
 
         firebase.auth().onAuthStateChanged(this.__firebaseOnAuthStateChanged.bind(this));
       }
@@ -138,9 +138,6 @@
       //----------------------------------------------------------------------
 
       __getUiConfig() {
-        const recaptchaValue = this.shadowRoot.querySelector(
-          'input[name="recaptcha"]:checked').value;
-
         return {
           'callbacks': {
             // ユーザーのサインインが成功した際にコールされる
@@ -170,13 +167,13 @@
             firebase.auth.GithubAuthProvider.PROVIDER_ID,
             {
               provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-              // Whether the display name should be displayed in Sign Up page.
+              // サインインページで表示名の入力を行うか否か
               requireDisplayName: true
             },
             {
               provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
               recaptchaParameters: {
-                size: recaptchaValue
+                size: this.__getRecaptchaValue(),
               }
             }
           ],
@@ -209,7 +206,7 @@
       __handleSignedOutUser() {
         this.$.userSignedIn.style.display = 'none';
         this.$.userSignedOut.style.display = 'block';
-        this.__firebaseui.start(this.$.firebaseuiContainer, this.__getUiConfig());
+        this.__authUI.start(this.$.firebaseuiContainer, this.__getUiConfig());
       }
 
       /**
@@ -217,8 +214,8 @@
        */
       __handleRecaptchaConfigChange() {
         // 設定が変更されたのでFirebaseUIのリセットを行う
-        this.__firebaseui.reset();
-        this.__firebaseui.start(this.$.firebaseuiContainer, this.__getUiConfig());
+        this.__authUI.reset();
+        this.__authUI.start(this.$.firebaseuiContainer, this.__getUiConfig());
       }
 
       /**
@@ -238,30 +235,64 @@
         });
       }
 
+      /**
+       * ユーザーが選択したreCAPTCHAの値を取得します。
+       */
+      __getRecaptchaValue() {
+        const recaptchaValue = this.shadowRoot.querySelector(
+          'input[name="recaptcha"]:checked').value;
+        return recaptchaValue;
+      }
+
       //----------------------------------------------------------------------
       //
       //  Event handlers
       //
       //----------------------------------------------------------------------
 
+      /**
+       * Firebaseの認証状態が変化した際のハンドラです。
+       * @param user
+       */
       __firebaseOnAuthStateChanged(user) {
         this.$.loading.style.display = 'none';
         this.$.loaded.style.display = 'block';
         user ? this.__handleSignedInUser(user) : this.__handleSignedOutUser();
       }
 
+      /**
+       * サインアウトボタンがクリックされた際のハンドラです。
+       * @param e
+       */
       __signOutButtonOnClick(e) {
         firebase.auth().signOut();
       }
 
+      /**
+       * アカウント削除ボタンがクリックされた際のハンドラです。
+       * @param e
+       */
       __deleteAccountButtonOnClick(e) {
         this.__deleteAccount();
       }
 
+      /**
+       * reCAPTCHAのラジオボタンの選択が変更された際のハンドラです。
+       * @param e
+       */
       __recaptchaRadioOnChange(e) {
         this.__handleRecaptchaConfigChange();
       }
 
+      /**
+       * Sign In with Popupボタンがクリックされた際のハンドラです。
+       * @param e
+       */
+      __signInWithPopupButtonOnClick(e) {
+        const recaptchaValue = this.__getRecaptchaValue();
+        const url = `${this.rootPath}src/auth-popup.html?recaptcha=${recaptchaValue}`;
+        window.open(url, 'Sign In', 'width=600,height=700');
+      }
     }
 
     window.customElements.define(AuthView.is, AuthView);
