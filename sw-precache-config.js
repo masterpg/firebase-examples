@@ -14,7 +14,8 @@ module.exports = {
   staticFileGlobs: [
     'index.html',
     'manifest.json',
-    'bower_components/webcomponentsjs/*',
+    'firebase-config.js',
+    'bower_components/webcomponentsjs/*'
   ],
   navigateFallback: 'index.html',
 };

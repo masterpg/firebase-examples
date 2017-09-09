@@ -2,6 +2,8 @@
   "entrypoint": "index.html",
   "shell": "src/my-app.html",
   "fragments": [
+    "src/auth-view.html",
+    "src/file-upload-view.html",
     "src/my-view1.html",
     "src/my-view2.html",
     "src/my-view3.html",
@@ -16,7 +18,7 @@
   "extraDependencies": [
     "manifest.json",
     "bower_components/webcomponentsjs/*.js",
-    "firebaseui/*"
+    "firebaseui/**/*"
   ],
   "lint": {
     "rules": ["polymer-2"]
