@@ -7,9 +7,6 @@
 <dom-module id="auth-view">
 
   <template>
-    <link type="text/css" rel="stylesheet" href="../firebaseui/firebaseui.css"/>
-    <link type="text/css" rel="stylesheet" href="../firebaseui/firebaseui-custom.css"/>
-
     <style include="shared-styles">
       :host {
         display: block;
@@ -19,6 +16,11 @@
       .wrapper {
         height: 100%;
         padding: 24px;
+      }
+
+      paper-button {
+        font-size: 14px;
+        color: var(--paper-indigo-500);
       }
 
       .user-info {
@@ -36,66 +38,41 @@
         float: left;
         height: 80px;
         margin-right: 10px;
-        width: 80px;
       }
 
       #photo {
         height: 80px;
         margin: 0;
-        width: 80px;
       }
     </style>
 
     <div class="wrapper layout vertical center">
 
-      <div id="loading">Loading...</div>
-
-      <div id="loaded" class="hidden">
-
-        <div id="userSignedIn" class="hidden">
-          <div class="layout horizontal user-info">
-            <div class="photo-container">
-              <img id="photo">
-            </div>
-            <div class="layout vertical">
-              <div id="name"></div>
-              <div id="email"></div>
-              <div id="phone"></div>
-            </div>
+      <div id="userSignedIn" class="hidden">
+        <div class="layout horizontal user-info">
+          <div class="photo-container">
+            <img id="photo">
           </div>
-          <p class="layout horizontal center-justified">
-            <button on-click="__signOutButtonOnClick">Sign Out</button>
-            <button on-click="__deleteAccountButtonOnClick">Delete account</button>
-          </p>
-        </div>
-
-        <div id="userSignedOut" class="hidden">
-          <h4>You are signed out.</h4>
-          <fieldset>
-            <legend>Configuration</legend>
-            reCAPTCHA mode for Phone Auth:
-            <label for="recaptchaNormal">
-              <input type="radio" id="recaptchaNormal" name="recaptcha" value="normal" checked
-                     on-change="__recaptchaRadioOnChange">
-              Normal
-            </label>
-            <label for="recaptchaInvisible">
-              <input type="radio" id="recaptchaInvisible" name="recaptcha" value="invisible"
-                     on-change="__recaptchaRadioOnChange">
-              Invisible
-            </label>
-          </fieldset>
-          <p class="layout horizontal center-justified">
-            <button id="sign-in-with-redirect">Sign In with Redirect</button>
-            <button id="sign-in-with-popup" on-click="__signInWithPopupButtonOnClick">Sign In with Popup</button>
-          </p>
-          <div>
-            <h5 class="layout horizontal center-justified">Single Page Application mode:</h5>
-            <div id="firebaseuiContainer"></div>
+          <div class="layout vertical">
+            <div id="name"></div>
+            <div id="email"></div>
+            <div id="phone"></div>
           </div>
         </div>
-
+        <p class="layout horizontal center-justified">
+          <button on-click="__signOutButtonOnClick">Sign Out</button>
+          <button on-click="__deleteAccountButtonOnClick">Delete account</button>
+        </p>
       </div>
+
+      <div id="userSignedOut" class="hidden">
+        <h4>You are signed out.</h4>
+        <div class="layout vertical center">
+          <span><paper-button id="googleLoginButton" on-click="__loginButtonOnClick">Googleでログイン</paper-button></span>
+          <span><paper-button id="facebookLoginButton" on-click="__loginButtonOnClick">Facebookでログイン</paper-button></span>
+        </div>
+      </div>
+
     </div>
   </template>
 
@@ -113,8 +90,6 @@
 
       constructor() {
         super();
-
-        this.__authUI = undefined;
       }
 
       //----------------------------------------------------------------------
@@ -126,10 +101,13 @@
       ready() {
         super.ready();
 
-        // FirebaseUIウィジェットをFirebaseで初期化
-        this.__authUI = new firebaseui.auth.AuthUI(firebase.auth());
-
         firebase.auth().onAuthStateChanged(this.__firebaseOnAuthStateChanged.bind(this));
+
+        this.__googleProvider = new firebase.auth.GoogleAuthProvider();
+        this.__googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+
+        this.__facebookProvider = new firebase.auth.FacebookAuthProvider();
+        this.__facebookProvider.addScope('user_birthday');
       }
 
       //----------------------------------------------------------------------
@@ -137,51 +115,6 @@
       //  Internal methods
       //
       //----------------------------------------------------------------------
-
-      __getUiConfig() {
-        return {
-          'callbacks': {
-            // ユーザーのサインインが成功した際にコールされる
-            'signInSuccess': function (user, credential, redirectUrl) {
-              this.__handleSignedInUser(user);
-              return false; // リダイレクトはしない
-            }
-          },
-          // IDPプロバイダのサインインフローをポップアップで開く
-          'signInFlow': 'popup',
-          'signInOptions': [
-            // TODO(developer): Remove the providers you don't need for your app.
-            {
-              provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-              scopes: ['https://www.googleapis.com/auth/plus.login']
-            },
-            {
-              provider: firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-              scopes: [
-                'public_profile',
-                'email',
-                'user_likes',
-                'user_friends'
-              ]
-            },
-            firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-            firebase.auth.GithubAuthProvider.PROVIDER_ID,
-            {
-              provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-              // サインインページで表示名の入力を行うか否か
-              requireDisplayName: true
-            },
-            {
-              provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
-              recaptchaParameters: {
-                size: this.__getRecaptchaValue(),
-              }
-            }
-          ],
-          // Terms of service url.
-          'tosUrl': 'https://www.google.com'
-        };
-      }
 
       /**
        * ユーザーがサインインした状態のUI表示を行います。
@@ -207,42 +140,28 @@
       __handleSignedOutUser() {
         this.$.userSignedIn.style.display = 'none';
         this.$.userSignedOut.style.display = 'block';
-        this.__authUI.start(this.$.firebaseuiContainer, this.__getUiConfig());
-      }
-
-      /**
-       * ユーザーによってreCAPTCHAの設定が変更された際の処理を行います。
-       */
-      __handleRecaptchaConfigChange() {
-        // 設定が変更されたのでFirebaseUIのリセットを行う
-        this.__authUI.reset();
-        this.__authUI.start(this.$.firebaseuiContainer, this.__getUiConfig());
       }
 
       /**
        * ユーザーアカウントを削除します。
        */
       __deleteAccount() {
-        firebase.auth().currentUser.delete().catch((err) => {
-          // ユーザーの認証情報が古すぎる場合、再度サインインが必要
-          if (err.code == 'auth/requires-recent-login') {
-            firebase.auth().signOut().then(() => {
-              // UIがサインアウト状態に変化した後にメッセージが表示されるようsetTimeout()している
-              setTimeout(() => {
-                alert('Please sign in again to delete your account.');
-              }, 1);
-            });
-          }
+        return new Promise((reject) => {
+          firebase.auth().currentUser.delete().catch((err) => {
+            // ユーザーの認証情報が古すぎる場合、再度サインインが必要
+            if (err.code == 'auth/requires-recent-login') {
+              firebase.auth().signOut().then(() => {
+                // UIがサインアウト状態に変化した後にメッセージが表示されるようsetTimeout()している
+                setTimeout(() => {
+                  alert('Please sign in again to delete your account.');
+                  reject(err);
+                }, 1);
+              });
+            } else {
+              resolve(err);
+            }
+          });
         });
-      }
-
-      /**
-       * ユーザーが選択したreCAPTCHAの値を取得します。
-       */
-      __getRecaptchaValue() {
-        const recaptchaValue = this.shadowRoot.querySelector(
-          'input[name="recaptcha"]:checked').value;
-        return recaptchaValue;
       }
 
       //----------------------------------------------------------------------
@@ -256,9 +175,35 @@
        * @param user
        */
       __firebaseOnAuthStateChanged(user) {
-        this.$.loading.style.display = 'none';
-        this.$.loaded.style.display = 'block';
         user ? this.__handleSignedInUser(user) : this.__handleSignedOutUser();
+      }
+
+      __loginButtonOnClick(e) {
+        let provider;
+        if (e.target === this.$.googleLoginButton) {
+          provider = this.__googleProvider;
+        } else if (e.target === this.$.facebookLoginButton) {
+          provider = this.__facebookProvider;
+        }
+
+        firebase.auth().signInWithPopup(provider).then((result) => {
+          // This gives you a Google Access Token. You can use it to access the Google API.
+          const token = result.credential.accessToken;
+          // The signed-in user info.
+          const user = result.user;
+          console.log('token:', token, ', user:', user);
+          // ...
+        }).catch((err) => {
+          // Handle Errors here.
+          const errorCode = err.code;
+          const errorMessage = err.message;
+          // The email of the user's account used.
+          const email = err.email;
+          // The firebase.auth.AuthCredential type that was used.
+          const credential = err.credential;
+          // ...
+          console.error(err);
+        });
       }
 
       /**
@@ -275,24 +220,6 @@
        */
       __deleteAccountButtonOnClick(e) {
         this.__deleteAccount();
-      }
-
-      /**
-       * reCAPTCHAのラジオボタンの選択が変更された際のハンドラです。
-       * @param e
-       */
-      __recaptchaRadioOnChange(e) {
-        this.__handleRecaptchaConfigChange();
-      }
-
-      /**
-       * Sign In with Popupボタンがクリックされた際のハンドラです。
-       * @param e
-       */
-      __signInWithPopupButtonOnClick(e) {
-        const recaptchaValue = this.__getRecaptchaValue();
-        const url = `${this.rootPath}src/auth-popup.html?recaptcha=${recaptchaValue}`;
-        window.open(url, 'Sign In', 'width=600,height=700');
       }
     }
 
