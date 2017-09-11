@@ -27,7 +27,8 @@
       "preset": "es5-bundled"
     },
     {
-      "preset": "es6-bundled"
+      "preset": "es6-bundled",
+      "addServiceWorker": false
     },
     {
       "preset": "es6-unbundled"
