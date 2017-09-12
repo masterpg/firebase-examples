@@ -12,8 +12,7 @@
   "sources": [
     "src/**/*",
     "images/**/*",
-    "firebase-config.js",
-    "bower.json"
+    "firebase-config.js"
   ],
   "extraDependencies": [
     "manifest.json",
@@ -24,14 +23,8 @@
   },
   "builds": [
     {
-      "preset": "es5-bundled"
-    },
-    {
       "preset": "es6-bundled",
       "addServiceWorker": false
-    },
-    {
-      "preset": "es6-unbundled"
     }
   ]
 }

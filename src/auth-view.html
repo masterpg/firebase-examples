@@ -187,19 +187,18 @@
         }
 
         firebase.auth().signInWithPopup(provider).then((result) => {
-          // This gives you a Google Access Token. You can use it to access the Google API.
+          // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
           const token = result.credential.accessToken;
-          // The signed-in user info.
+          // サインインしたユーザー情報の取得
           const user = result.user;
-          console.log('token:', token, ', user:', user);
           // ...
         }).catch((err) => {
           // Handle Errors here.
           const errorCode = err.code;
           const errorMessage = err.message;
-          // The email of the user's account used.
+          // エラーとなったアカウントのメールアドレス
           const email = err.email;
-          // The firebase.auth.AuthCredential type that was used.
+          // 使用されたfirebase.auth.AuthCredential
           const credential = err.credential;
           // ...
           console.error(err);
