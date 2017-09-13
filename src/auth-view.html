@@ -3,6 +3,7 @@
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../bower_components/paper-progress/paper-progress.html">
 <link rel="import" href="shared-styles.html">
+<script src="../node_modules/axios/dist/axios.min.js"></script>
 
 <dom-module id="auth-view">
 
@@ -162,6 +163,19 @@
             }
           });
         });
+      }
+
+      /**
+       * `hello`HTTP APIをコールします。
+       */
+      __callHello() {
+        axios.get('https://us-central1-hoge-ac1d8.cloudfunctions.net/addMessage?text=hello')
+          .then(function (response) {
+            console.log(response);
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
       }
 
       //----------------------------------------------------------------------
