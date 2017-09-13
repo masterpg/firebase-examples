@@ -1,7 +1,8 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-input/paper-input.html">
-<link rel="import" href="../bower_components/paper-progress/paper-progress.html">
+<link rel="import" href="../bower_components/paper-radio-button/paper-radio-button.html">
+<link rel="import" href="../bower_components/paper-radio-group/paper-radio-group.html">
 <link rel="import" href="shared-styles.html">
 <script src="../node_modules/axios/dist/axios.min.js"></script>
 
@@ -45,6 +46,10 @@
         height: 80px;
         margin: 0;
       }
+
+      .signIn-mode-area {
+        margin: 20px 0;
+      }
     </style>
 
     <div class="wrapper layout vertical center">
@@ -68,6 +73,12 @@
 
       <div id="userSignedOut" class="hidden">
         <h4>You are signed out.</h4>
+        <div class="signIn-mode-area">
+          <paper-radio-group id="signInModeGroup" selected="popup">
+            <paper-radio-button name="popup">Popup</paper-radio-button>
+            <paper-radio-button name="redirect">Redirect</paper-radio-button>
+          </paper-radio-group>
+        </div>
         <div class="layout vertical center">
           <span><paper-button id="googleLoginButton" on-click="__loginButtonOnClick">Googleでログイン</paper-button></span>
           <span><paper-button id="facebookLoginButton" on-click="__loginButtonOnClick">Facebookでログイン</paper-button></span>
@@ -178,6 +189,49 @@
           });
       }
 
+      /**
+       * ポップアップ形式でサインインを行います。
+       */
+      __signInWithPopup(provider) {
+        firebase.auth().signInWithPopup(provider).then((result) => {
+          if (result.credential) {
+            // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
+            const token = result.credential.accessToken;
+          }
+          // サインインしたユーザー情報の取得
+          const user = result.user;
+          // ...
+        }).catch((err) => {
+          const errorCode = err.code;
+          const errorMessage = err.message;
+          const email = err.email;
+          const credential = err.credential;
+          console.error(err);
+        });
+      }
+
+      /**
+       * リダイレクト形式でサインインを行います。
+       */
+      __signInWithRedirect(provider) {
+        firebase.auth().getRedirectResult().then(function(result) {
+          if (result.credential) {
+            // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
+            const token = result.credential.accessToken;
+          }
+          // サインインしたユーザー情報の取得
+          const user = result.user;
+        }).catch(function(error) {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          const email = error.email;
+          const credential = error.credential;
+          console.error(err);
+        });
+
+        firebase.auth().signInWithRedirect(provider);
+      }
+
       //----------------------------------------------------------------------
       //
       //  Event handlers
@@ -200,23 +254,12 @@
           provider = this.__facebookProvider;
         }
 
-        firebase.auth().signInWithPopup(provider).then((result) => {
-          // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
-          const token = result.credential.accessToken;
-          // サインインしたユーザー情報の取得
-          const user = result.user;
-          // ...
-        }).catch((err) => {
-          // Handle Errors here.
-          const errorCode = err.code;
-          const errorMessage = err.message;
-          // エラーとなったアカウントのメールアドレス
-          const email = err.email;
-          // 使用されたfirebase.auth.AuthCredential
-          const credential = err.credential;
-          // ...
-          console.error(err);
-        });
+        let mode = this.$.signInModeGroup.selected;
+        if (mode === 'popup') {
+          this.__signInWithPopup(provider);
+        } else if (mode === 'redirect') {
+          this.__signInWithRedirect(provider);
+        }
       }
 
       /**
