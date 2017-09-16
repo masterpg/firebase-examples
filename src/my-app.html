@@ -149,8 +149,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       }
 
       _routePageChanged(page) {
-        console.log('route:', this.route, ', routeData:', this.routeData , ', subroute:', this.subroute);
-
         // If no page was found in the route data, page will be an empty string.
         // Deault to 'view1' in that case.
         this.page = page || 'my-view1';

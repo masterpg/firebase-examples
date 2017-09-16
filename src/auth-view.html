@@ -180,20 +180,24 @@
        * `hello`HTTP APIをコールします。
        */
       __callHello() {
-        axios.get('https://us-central1-hoge-ac1d8.cloudfunctions.net/addMessage?text=hello')
-          .then(function (response) {
+        return firebase.auth().currentUser.getIdToken().then((token) => {
+          const url = `https://${firebase.app().options.authDomain}/api/hello`;
+          console.log(url);
+          return axios.get(url, {
+            headers: {'Authorization': `Bearer ${token}`},
+          }).then((response) => {
             console.log(response);
-          })
-          .catch(function (error) {
+          }).catch(function (error) {
             console.log(error);
           });
+        });
       }
 
       /**
        * ポップアップ形式でサインインを行います。
        */
       __signInWithPopup(provider) {
-        firebase.auth().signInWithPopup(provider).then((result) => {
+        return firebase.auth().signInWithPopup(provider).then((result) => {
           if (result.credential) {
             // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
             const token = result.credential.accessToken;
@@ -214,22 +218,22 @@
        * リダイレクト形式でサインインを行います。
        */
       __signInWithRedirect(provider) {
-        firebase.auth().getRedirectResult().then(function(result) {
+        firebase.auth().signInWithRedirect(provider);
+
+        return firebase.auth().getRedirectResult().then((result) => {
           if (result.credential) {
             // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
             const token = result.credential.accessToken;
           }
           // サインインしたユーザー情報の取得
           const user = result.user;
-        }).catch(function(error) {
-          const errorCode = error.code;
-          const errorMessage = error.message;
-          const email = error.email;
-          const credential = error.credential;
+        }).catch(function (err) {
+          const errorCode = err.code;
+          const errorMessage = err.message;
+          const email = err.email;
+          const credential = err.credential;
           console.error(err);
         });
-
-        firebase.auth().signInWithRedirect(provider);
       }
 
       //----------------------------------------------------------------------
@@ -254,12 +258,16 @@
           provider = this.__facebookProvider;
         }
 
+        let signedIn;
         let mode = this.$.signInModeGroup.selected;
         if (mode === 'popup') {
-          this.__signInWithPopup(provider);
+          signedIn = this.__signInWithPopup(provider);
         } else if (mode === 'redirect') {
-          this.__signInWithRedirect(provider);
+          signedIn = this.__signInWithRedirect(provider);
         }
+        signedIn.then(() => {
+          this.__callHello();
+        })
       }
 
       /**
