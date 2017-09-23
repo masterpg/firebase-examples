@@ -85,7 +85,7 @@ gulp.task('clean', () => {
  */
 gulp.task('serve', () => {
   // 変更監視処理
-  gulp.watch(['webpack.config.js', 'src/**/*.js'], ['webpack', 'flow']);
+  gulp.watch(['src/**/*.js'], ['flow']);
 
   return runSequence('clean:dev', 'build:dev', 'serve:firebase');
 });
@@ -107,8 +107,9 @@ gulp.task('clean:dev', () => {
  */
 gulp.task('build:dev', () => {
   return runSequence(
-    'webpack',
-    'build-dev-resources'
+    'build-dev-resources',
+    'flow',
+    'webpack'
   );
 });
 
