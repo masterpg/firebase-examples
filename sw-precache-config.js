@@ -12,11 +12,10 @@
 
 module.exports = {
   staticFileGlobs: [
-    "src/**/*",
+    'node_modules/**/*',
     "images/**/*",
-    'manifest.json',
-    'firebase-config.js',
-    'bower_components/webcomponentsjs/*'
+    'app.bundle.js',
+    'manifest.json'
   ],
   navigateFallback: 'index.html',
 };

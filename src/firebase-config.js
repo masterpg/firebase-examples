@@ -1,3 +1,7 @@
+/* @flow */
+
+import firebase from 'firebase';
+
 firebase.initializeApp({
   apiKey: "<API_KEY>",
   authDomain: "<PROJECT_ID>.firebaseapp.com",
