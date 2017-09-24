@@ -7,10 +7,10 @@ const vfs = require('vinyl-fs');
 const shell = require('gulp-shell');
 const changed = require('gulp-changed');
 const imagemin = require('gulp-imagemin');
+const _ = require('lodash');
 
 const webpackStream = require('webpack-stream');
 const webpack = require('webpack');
-const webpackConfig = require('./webpack.config');
 
 //----------------------------------------------------------------------
 //
@@ -37,22 +37,6 @@ gulp.task('serve:firebase', shell.task([
 ]));
 
 /**
- * webpackを実行します。
- */
-gulp.task('webpack', () => {
-  const destPath = webpackConfig.output.path;
-  return webpackStream(webpackConfig, webpack)
-    .pipe(gulp.dest(destPath));
-});
-
-gulp.task('flow', shell.task(
-  [
-    `yarn flow`,
-  ],
-  {ignoreErrors: true})
-);
-
-/**
  * 画像ファイルを圧縮します。
  */
 gulp.task('imagemin', () => {
@@ -73,7 +57,7 @@ gulp.task('imagemin', () => {
  * プロジェクトをクリーンします。
  */
 gulp.task('clean', () => {
-  del.sync(['public']);
+  return del(['public']);
 });
 
 //--------------------------------------------------
@@ -84,9 +68,6 @@ gulp.task('clean', () => {
  * 開発サーバーを起動します。
  */
 gulp.task('serve', () => {
-  // 変更監視処理
-  gulp.watch(['src/**/*.js'], ['flow']);
-
   return runSequence('clean:dev', 'build:dev', 'serve:firebase');
 });
 
@@ -103,13 +84,19 @@ gulp.task('clean:dev', () => {
 });
 
 /**
+ * webpack(開発環境用)を実行します。
+ */
+gulp.task('webpack:dev', () => {
+  return runWebpack('dev');
+});
+
+/**
  * 公開ディレクトリ(開発環境用)の構築を行います。
  */
 gulp.task('build:dev', () => {
   return runSequence(
     'build-dev-resources',
-    'flow',
-    'webpack'
+    'webpack:dev'
   );
 });
 
@@ -120,17 +107,13 @@ gulp.task('build-dev-resources', ['imagemin'], () => {
   // node_modulesのシンボリックリンクを作成
   const node = vfs.src('node_modules', {followSymlinks: false})
     .pipe(vfs.symlink(PUBLIC_DIR));
-  // index.htmlのシンボリックリンクを作成
-  const index = vfs.src('index.html', {followSymlinks: false})
-    .pipe(vfs.symlink(PUBLIC_DIR));
-  // manifest.jsonのシンボリックリンクを作成
   const manifest = vfs.src('manifest.json', {followSymlinks: false})
     .pipe(vfs.symlink(PUBLIC_DIR));
   // service-worker.jsのシンボリックリンクを作成
   const serviceWorker = vfs.src('service-worker.js', {followSymlinks: false})
     .pipe(vfs.symlink(PUBLIC_DIR));
 
-  return merge(node, index, manifest, serviceWorker);
+  return merge(node, manifest, serviceWorker);
 });
 
 //--------------------------------------------------
@@ -143,7 +126,7 @@ gulp.task('build-dev-resources', ['imagemin'], () => {
 gulp.task('build', () => {
   return runSequence(
     'clean',
-    'webpack',
+    'webpack:prod',
     'build-prod-resources',
     'build-service-worker',
     'imagemin'
@@ -151,11 +134,17 @@ gulp.task('build', () => {
 });
 
 /**
+ * webpack(本番環境用)を実行します。
+ */
+gulp.task('webpack:prod', () => {
+  return runWebpack('prod');
+});
+
+/**
  * 公開ディレクトリに本番環境用のリソースを準備します。
  */
 gulp.task('build-prod-resources', () => {
   const files = gulp.src([
-    'index.html',
     'manifest.json',
   ]).pipe(gulp.dest(PUBLIC_DIR));
 
@@ -173,3 +162,20 @@ gulp.task('build-prod-resources', () => {
 gulp.task('build-service-worker', shell.task([
   `cd ${PUBLIC_DIR} && sw-precache --config=../sw-precache-config.js`,
 ]));
+
+//----------------------------------------------------------------------
+//
+//  Methods
+//
+//----------------------------------------------------------------------
+
+/**
+ * webpackを実行します。
+ * @param mode "dev", "prod"のいずれかを指定します。
+ */
+function runWebpack(mode) {
+  const config = _.cloneDeep(require(`./webpack.config.${mode}`));
+  const destPath = config.output.path;
+  return webpackStream(config, webpack)
+    .pipe(gulp.dest(destPath));
+}

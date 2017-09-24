@@ -1,13 +1,9 @@
-/* @flow */
-
-import '../node_modules/@polymer/polymer/polymer';
-import {Element as PolymerElement} from '../node_modules/@polymer/polymer/polymer-element.js';
-import '../node_modules/@polymer/paper-button/paper-button';
-import '../node_modules/@polymer/paper-input/paper-input';
-import '../node_modules/@polymer/paper-progress/paper-progress';
+import '@polymer/polymer/polymer';
+import {Element as PolymerElement} from '@polymer/polymer/polymer-element';
+import '@polymer/paper-button/paper-button';
+import '@polymer/paper-input/paper-input';
+import '@polymer/paper-progress/paper-progress';
 import './shared-styles';
-
-import firebase from 'firebase';
 
 export class FileUploadView extends PolymerElement {
   static get is() {
@@ -112,8 +108,8 @@ export class FileUploadView extends PolymerElement {
     const task = ref.put(file);
 
     this.$.uploadProgress.value = 0;
-    task.on('state_changed',
-      (snapshot) => {
+    task.on(firebase.storage.TaskEvent.STATE_CHANGED,
+      (snapshot: any) => {
         // アップロードのプログレスバーを更新
         const percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         this.$.uploadProgress.value = percentage;

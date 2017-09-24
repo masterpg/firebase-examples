@@ -1,5 +1,3 @@
-/* @flow */
-
 import * as qs from 'qs';
 
 export class LocationData {
@@ -19,12 +17,16 @@ export class LocationData {
     this.path = decodeURIComponent(src.pathname);
     this.hash = decodeURIComponent(src.hash.substring(1));
     this.host = src.host;
-    this.dir = REG_DIR.test(this.path) ?
-      decodeURIComponent(REG_DIR.exec(this.path)[1]) : '';
-    this.base = REG_BASE.test(this.path) ?
-      decodeURIComponent(REG_BASE.exec(this.path)[1]) : '';
-    this.ext = REG_EXT.test(this.path) ?
-      decodeURIComponent(REG_EXT.exec(this.path)[1]) : '';
+
+    const testedDir = REG_DIR.test(this.path);
+    this.dir = testedDir ? decodeURIComponent(testedDir[1]) : '';
+
+    const testedBase = REG_BASE.test(this.path);
+    this.base = testedBase ? decodeURIComponent(testedBase[1]) : '';
+
+    const testedExt = REG_EXT.test(this.path);
+    this.ext = testedExt ? decodeURIComponent(testedExt[1]) : '';
+
     this.query = qs.parse(src.search.substring(1));
   }
 
@@ -52,7 +54,7 @@ export class LocationUtil {
     if (Object.keys(query).length) {
       url += `?${qs.stringify(query)}`;
     }
-    window.history.pushState({}, null, url);
+    window.history.pushState({}, '', url);
     window.dispatchEvent(new CustomEvent('location-changed'));
   }
 
@@ -61,7 +63,7 @@ export class LocationUtil {
    * @param url
    */
   static parse(url): LocationData {
-    let anchor = (document.createElement('a'): HTMLAnchorElement);
+    let anchor = document.createElement('a') as HTMLAnchorElement;
     anchor.href = url;
     return new LocationData(anchor);
   }

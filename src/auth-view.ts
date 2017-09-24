@@ -1,13 +1,10 @@
-/* @flow */
-
 import '../node_modules/@polymer/polymer/polymer';
-import {Element as PolymerElement} from '../node_modules/@polymer/polymer/polymer-element.js';
+import {Element as PolymerElement} from '@polymer/polymer/polymer-element';
 import '../node_modules/@polymer/paper-button/paper-button';
 import '../node_modules/@polymer/paper-input/paper-input';
 import '../node_modules/@polymer/paper-radio-button/paper-radio-button';
 import '../node_modules/@polymer/paper-radio-group/paper-radio-group';
 
-import firebase from 'firebase';
 import axios from 'axios';
 
 export class AuthView extends PolymerElement {
@@ -145,7 +142,7 @@ export class AuthView extends PolymerElement {
    * ユーザーがサインインした状態のUI表示を行います。
    * @param user
    */
-  __handleSignedInUser(user: ?FirebaseUser) {
+  __handleSignedInUser(user: firebase.User) {
     this.$.userSignedIn.style.display = 'block';
     this.$.userSignedOut.style.display = 'none';
     this.$.name.textContent = user ? user.displayName : '';
@@ -172,8 +169,10 @@ export class AuthView extends PolymerElement {
    */
   __deleteAccount(): Promise<void> {
     return new Promise((reject) => {
-      firebase.auth().currentUser.delete()
-        .catch((err) => {
+      const currentUser = firebase.auth().currentUser;
+      if (!currentUser) return;
+      currentUser.delete()
+        .catch((err: any) => {
           // ユーザーの認証情報が古すぎる場合、再度サインインが必要
           if (err.code == 'auth/requires-recent-login') {
             firebase.auth().signOut().then(() => {
@@ -196,17 +195,22 @@ export class AuthView extends PolymerElement {
    * `hello`HTTP APIをコールします。
    */
   __callHello(): Promise<void> {
-    return firebase.auth().currentUser.getIdToken().then((token) => {
-      const domain = firebase.app().options.authDomain || '';
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) return Promise.resolve();
+    return currentUser.getIdToken().then((token) => {
+      const options: any = firebase.app().options || {};
+      const domain = options.authDomain || '';
+      if (!domain) throw new Error('Domain could not be acquired.');
+
       const url = `https://${domain}/api/hello`;
       return axios.get(url, {
         headers: {'Authorization': `Bearer ${token}`},
       }).then((response) => {
         console.log(response);
-      }).catch(function (error) {
-        console.log(error);
+      }).catch(function (err) {
+        console.error(err);
       });
-    });
+    }) as Promise<void>;
   }
 
   /**
@@ -221,13 +225,13 @@ export class AuthView extends PolymerElement {
       // サインインしたユーザー情報の取得
       const user = result.user;
       // ...
-    }).catch((err) => {
+    }).catch((err: any) => {
       const errorCode = err.code;
       const errorMessage = err.message;
       const email = err.email;
       const credential = err.credential;
       console.error(err);
-    });
+    }) as Promise<void>;
   }
 
   /**
@@ -243,13 +247,13 @@ export class AuthView extends PolymerElement {
       }
       // サインインしたユーザー情報の取得
       const user = result.user;
-    }).catch(function (err) {
+    }).catch(function (err: any) {
       const errorCode = err.code;
       const errorMessage = err.message;
       const email = err.email;
       const credential = err.credential;
       console.error(err);
-    });
+    }) as Promise<void>;
   }
 
   //----------------------------------------------------------------------
@@ -262,7 +266,7 @@ export class AuthView extends PolymerElement {
    * Firebaseの認証状態が変化した際のハンドラです。
    * @param user
    */
-  __firebaseOnAuthStateChanged(user: ?FirebaseUser) {
+  __firebaseOnAuthStateChanged(user: firebase.User) {
     user ? this.__handleSignedInUser(user) : this.__handleSignedOutUser();
   }
 
@@ -276,7 +280,7 @@ export class AuthView extends PolymerElement {
       return;
     }
 
-    let signedIn: Promise<void> = Promise.resolve();
+    let signedIn = Promise.resolve();
     let mode = this.$.signInModeGroup.selected;
     if (mode === 'popup') {
       signedIn = this.__signInWithPopup(provider);

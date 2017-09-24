@@ -1,8 +1,8 @@
-import '../node_modules/@polymer/polymer/polymer';
-import '../node_modules/@polymer/iron-flex-layout/iron-flex-layout';
-import '../node_modules/@polymer/iron-flex-layout/iron-flex-layout-classes';
-import '../node_modules/@polymer/paper-styles/color';
-import '../node_modules/@polymer/paper-styles/typography';
+import '@polymer/polymer/polymer';
+import '@polymer/iron-flex-layout/iron-flex-layout';
+import '@polymer/iron-flex-layout/iron-flex-layout-classes';
+import '@polymer/paper-styles/color';
+import '@polymer/paper-styles/typography';
 const $_documentContainer = document.createElement('div');
 $_documentContainer.setAttribute('style', 'display: none;');
 

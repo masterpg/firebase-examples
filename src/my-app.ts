@@ -1,20 +1,19 @@
-/* @flow */
-
-import '../node_modules/@polymer/polymer/polymer';
-import {Element as PolymerElement} from '../node_modules/@polymer/polymer/polymer-element.js';
-import '../node_modules/@polymer/app-layout/app-drawer/app-drawer';
-import '../node_modules/@polymer/app-layout/app-drawer-layout/app-drawer-layout';
-import '../node_modules/@polymer/app-layout/app-header/app-header';
-import '../node_modules/@polymer/app-layout/app-header-layout/app-header-layout';
-import '../node_modules/@polymer/app-layout/app-scroll-effects/app-scroll-effects';
-import '../node_modules/@polymer/app-layout/app-toolbar/app-toolbar';
-import '../node_modules/@polymer/iron-location/iron-location';
-import '../node_modules/@polymer/iron-pages/iron-pages';
-import '../node_modules/@polymer/iron-selector/iron-selector';
-import '../node_modules/@polymer/paper-button/paper-button';
-import '../node_modules/@polymer/paper-icon-button/paper-icon-button';
+import '@polymer/polymer/polymer';
+import {Element as PolymerElement} from '@polymer/polymer/polymer-element';
+import '@polymer/app-layout/app-drawer/app-drawer';
+import '@polymer/app-layout/app-drawer-layout/app-drawer-layout';
+import '@polymer/app-layout/app-header/app-header';
+import '@polymer/app-layout/app-header-layout/app-header-layout';
+import '@polymer/app-layout/app-scroll-effects/app-scroll-effects';
+import '@polymer/app-layout/app-toolbar/app-toolbar';
+import '@polymer/iron-location/iron-location';
+import '@polymer/iron-pages/iron-pages';
+import '@polymer/iron-selector/iron-selector';
+import '@polymer/paper-button/paper-button';
+import '@polymer/paper-icon-button/paper-icon-button';
 
 import './firebase-config';
+import {environment} from './environments/environment';
 import {LocationData, LocationUtil} from "./core/location";
 
 import './auth-view';
@@ -82,7 +81,7 @@ export class MyApp extends PolymerElement {
         <!-- Drawer content -->
         <app-drawer id="drawer" slot="drawer" swipe-open="[[narrow]]">
           <app-toolbar>Menu</app-toolbar>
-          <iron-selector selected="[[page]]" attr-for-selected="name" class="drawer-list" role="navigation">
+          <iron-selector selected="[[__page]]" attr-for-selected="name" class="drawer-list" role="navigation">
             <a name="auth-view" href="[[rootPath]]auth-view">Authentication</a>
             <a name="file-upload-view" href="[[rootPath]]file-upload-view">File Upload</a>
             <a name="my-view1" href="[[rootPath]]my-view1">View One</a>
@@ -102,7 +101,7 @@ export class MyApp extends PolymerElement {
           </app-header>
 
           <iron-pages
-              selected="[[page]]"
+              selected="[[__page]]"
               attr-for-selected="name"
               fallback-selection="view404"
               role="main">
@@ -120,7 +119,10 @@ export class MyApp extends PolymerElement {
 
   constructor() {
     super();
+    console.log('production:', environment.production);
   }
+
+  __page: string;
 
   __locationPath: string;
 
@@ -146,7 +148,7 @@ export class MyApp extends PolymerElement {
     } else {
       page = paths[0];
     }
-    this.page = page;
+    this.__page = page;
 
     // Close a non-persistent drawer when the page & route are changed.
     if (!this.$.drawer.persistent) {
@@ -155,7 +157,7 @@ export class MyApp extends PolymerElement {
   }
 
   __showPage404() {
-    this.page = 'my-view404';
+    this.__page = 'my-view404';
   }
 }
 

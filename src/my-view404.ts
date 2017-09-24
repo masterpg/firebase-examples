@@ -1,7 +1,5 @@
-/* @flow */
-
-import '../node_modules/@polymer/polymer/polymer';
-import {Element as PolymerElement} from '../node_modules/@polymer/polymer/polymer-element.js';
+import '@polymer/polymer/polymer';
+import {Element as PolymerElement} from '@polymer/polymer/polymer-element';
 import './shared-styles';
 
 export class MyView404 extends PolymerElement {
