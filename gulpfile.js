@@ -32,7 +32,7 @@ const PUBLIC_DIR = 'public';
 /**
  * firebaseのローカルサーバーを起動します。
  */
-gulp.task('serve:firebase', shell.task([
+gulp.task('firebase-serve', shell.task([
   `firebase serve --only hosting,functions`,
 ]));
 
@@ -68,7 +68,7 @@ gulp.task('clean', () => {
  * 開発サーバーを起動します。
  */
 gulp.task('serve', () => {
-  return runSequence('clean:dev', 'build:dev', 'serve:firebase');
+  return runSequence('clean:dev', 'build:dev', 'firebase-serve');
 });
 
 
@@ -130,6 +130,15 @@ gulp.task('build', () => {
     'build-prod-resources',
     'build-service-worker',
     'imagemin'
+  );
+});
+
+/**
+ * ビルド結果を検証するための開発サーバーを起動します。
+ */
+gulp.task('serve:build', () => {
+  return runSequence(
+    ['firebase-serve']
   );
 });
 

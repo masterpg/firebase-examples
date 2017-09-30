@@ -81,15 +81,14 @@ export class FileUploadView extends PolymerElement {
 
   __imageUrl: string;
 
-  __loadUploadedImage(imagePath: string) {
+  async __loadUploadedImage(imagePath: string): Promise<void> {
     // 画像パス(例: images/space.png)から参照を取得
     const ref = firebase.storage().ref(imagePath);
     // 取得した参照からダウンロード用のURLを取得
-    ref.getDownloadURL().then((url) => {
-      this.__imageUrl = url;
-      // 取得したURLの画像を表示
-      this.$.uploadedImage.src = url;
-    });
+    const url = await ref.getDownloadURL();
+    this.__imageUrl = url;
+    // 取得したURLの画像を表示
+    this.$.uploadedImage.src = url;
   }
 
   __uploadButtonOnClick(e: any) {

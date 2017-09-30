@@ -113,13 +113,15 @@ export class AuthView extends PolymerElement {
   ready() {
     super.ready();
 
-    firebase.auth().onAuthStateChanged(this.__firebaseOnAuthStateChanged.bind(this));
+    this.__signInWithRedirected().then(() => {
+      firebase.auth().onAuthStateChanged(this.__firebaseOnAuthStateChanged.bind(this));
 
-    this.__googleProvider = new firebase.auth.GoogleAuthProvider();
-    this.__googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
+      this.__googleProvider = new firebase.auth.GoogleAuthProvider();
+      this.__googleProvider.addScope('https://www.googleapis.com/auth/contacts.readonly');
 
-    this.__facebookProvider = new firebase.auth.FacebookAuthProvider();
-    this.__facebookProvider.addScope('user_birthday');
+      this.__facebookProvider = new firebase.auth.FacebookAuthProvider();
+      this.__facebookProvider.addScope('user_birthday');
+    });
   }
 
   //----------------------------------------------------------------------
@@ -167,93 +169,99 @@ export class AuthView extends PolymerElement {
   /**
    * ユーザーアカウントを削除します。
    */
-  __deleteAccount(): Promise<void> {
-    return new Promise((reject) => {
-      const currentUser = firebase.auth().currentUser;
-      if (!currentUser) return;
-      currentUser.delete()
-        .catch((err: any) => {
-          // ユーザーの認証情報が古すぎる場合、再度サインインが必要
-          if (err.code == 'auth/requires-recent-login') {
-            firebase.auth().signOut().then(() => {
-              // UIがサインアウト状態に変化した後にメッセージが表示されるようsetTimeout()している
-              setTimeout(() => {
-                alert('Please sign in again to delete your account.');
-                reject(err);
-              }, 1);
-            });
-          }
-          // 上記以外のエラーの場合、そのままreject()
-          else {
-            reject(err);
-          }
-        });
-    });
+  async __deleteAccount(): Promise<void> {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) return;
+
+    try {
+      await currentUser.delete();
+      return;
+    } catch (err) {
+      // ユーザーの認証情報が古すぎる「以外」のエラーの場合、そのままthrow
+      if (err.code !== 'auth/requires-recent-login') {
+        throw(err);
+      }
+    }
+
+    // ユーザーの認証情報が古すぎる場合、サインアウト
+    // (一旦サインアウトしてから再度サインインが必要なため)
+    await firebase.auth().signOut();
+    // UIがサインアウト状態に変化した後にメッセージ表示されるようsetTimeout()している
+    setTimeout(() => {
+      alert('Please sign in again to delete your account.');
+    }, 1);
   }
 
   /**
    * `hello`HTTP APIをコールします。
    */
-  __callHello(): Promise<void> {
+  async __callHello(): Promise<void> {
     const currentUser = firebase.auth().currentUser;
-    if (!currentUser) return Promise.resolve();
-    return currentUser.getIdToken().then((token) => {
-      const options: any = firebase.app().options || {};
-      const domain = options.authDomain || '';
-      if (!domain) throw new Error('Domain could not be acquired.');
+    if (!currentUser) return;
 
-      const url = `https://${domain}/api/hello`;
-      return axios.get(url, {
-        headers: {'Authorization': `Bearer ${token}`},
-      }).then((response) => {
-        console.log(response);
-      }).catch(function (err) {
-        console.error(err);
-      });
-    }) as Promise<void>;
+    const token = await currentUser.getIdToken();
+    const options: any = firebase.app().options || {};
+    const domain = options.authDomain || '';
+    if (!domain) throw new Error('Domain could not be acquired.');
+
+    const url = `https://${domain}/api/hello`;
+    const response = await axios.get(url, {
+      headers: {'Authorization': `Bearer ${token}`},
+    });
+    console.log(response);
   }
 
   /**
    * ポップアップ形式でサインインを行います。
    */
-  __signInWithPopup(provider: firebase.auth.AuthProvider): Promise<void> {
-    return firebase.auth().signInWithPopup(provider).then((result) => {
-      if (result.credential) {
-        // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
-        const token = result.credential.accessToken;
-      }
-      // サインインしたユーザー情報の取得
-      const user = result.user;
-      // ...
-    }).catch((err: any) => {
+  async __signInWithPopup(provider: firebase.auth.AuthProvider): Promise<void> {
+    let signedIn: any;
+    try {
+      signedIn = await firebase.auth().signInWithPopup(provider);
+    } catch (err) {
       const errorCode = err.code;
       const errorMessage = err.message;
       const email = err.email;
       const credential = err.credential;
-      console.error(err);
-    }) as Promise<void>;
+      throw(err);
+    }
+
+    if (signedIn.credential) {
+      // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
+      const token = signedIn.credential.accessToken;
+    }
+    // サインインしたユーザー情報の取得
+    const user = signedIn.user;
   }
 
   /**
    * リダイレクト形式でサインインを行います。
    */
-  __signInWithRedirect(provider: firebase.auth.AuthProvider): Promise<void> {
-    firebase.auth().signInWithRedirect(provider);
+  async __signInWithRedirect(provider: firebase.auth.AuthProvider): Promise<void> {
+    await firebase.auth().signInWithRedirect(provider);
+  }
 
-    return firebase.auth().getRedirectResult().then((result) => {
-      if (result.credential) {
-        // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
-        const token = result.credential.accessToken;
-      }
-      // サインインしたユーザー情報の取得
-      const user = result.user;
-    }).catch(function (err: any) {
+  /**
+   * リダイレクト形式でサインイン後の結果取得処理を行います。
+   */
+  async __signInWithRedirected(): Promise<void> {
+    let redirected: any;
+    try {
+      redirected = await firebase.auth().getRedirectResult();
+    } catch (err) {
       const errorCode = err.code;
       const errorMessage = err.message;
       const email = err.email;
       const credential = err.credential;
-      console.error(err);
-    }) as Promise<void>;
+      throw(err);
+    }
+
+    if (redirected.credential) {
+      // Googleのアクセストークンを取得。このトークンはGoogle APIにアクセスする際に使用する
+      const token = redirected.credential.accessToken;
+    }
+    // サインインしたユーザー情報の取得
+    const user = redirected.user;
   }
 
   //----------------------------------------------------------------------
@@ -270,7 +278,7 @@ export class AuthView extends PolymerElement {
     user ? this.__handleSignedInUser(user) : this.__handleSignedOutUser();
   }
 
-  __loginButtonOnClick(e: any) {
+  async __loginButtonOnClick(e: any) {
     let provider: firebase.auth.AuthProvider;
     if (e.target === this.$.googleLoginButton) {
       provider = this.__googleProvider;
@@ -280,16 +288,14 @@ export class AuthView extends PolymerElement {
       return;
     }
 
-    let signedIn = Promise.resolve();
     let mode = this.$.signInModeGroup.selected;
     if (mode === 'popup') {
-      signedIn = this.__signInWithPopup(provider);
+      await this.__signInWithPopup(provider);
     } else if (mode === 'redirect') {
-      signedIn = this.__signInWithRedirect(provider);
+      await this.__signInWithRedirect(provider);
     }
-    signedIn.then(() => {
-      this.__callHello();
-    });
+
+    await this.__callHello();
   }
 
   /**

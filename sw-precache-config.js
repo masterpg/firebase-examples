@@ -13,9 +13,9 @@
 module.exports = {
   staticFileGlobs: [
     'node_modules/**/*',
-    "images/**/*",
+    'images/**/*',
     'app.bundle.*.js',
-    'manifest.json'
+    'manifest.json',
   ],
   navigateFallback: 'index.html',
 };
