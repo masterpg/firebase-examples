@@ -17,8 +17,8 @@
     "ts-loader": "^2.3.7",
     "typescript": "^2.5.2",
     "vinyl-fs": "^2.4.4",
-    "webpack-merge": "^4.1.0",
-    "webpack-stream": "^4.0.0"
+    "webpack": "^3.6.0",
+    "webpack-merge": "^4.1.0"
   },
   "scripts": {
     "lint": "npm run lint:javascript && polymer lint",
