@@ -14,7 +14,7 @@ import '@polymer/paper-icon-button/paper-icon-button';
 
 import './firebase-config';
 import {environment} from './environments/environment';
-import {LocationData, LocationUtil} from "./core/location";
+import locationUtil from './core/location';
 
 import './auth-view';
 import './file-upload-view';
@@ -74,7 +74,7 @@ export class MyApp extends PolymerElement {
           font-weight: bold;
         }
       </style>
-      
+
       <iron-location path="{{__locationPath}}"></iron-location>
 
       <app-drawer-layout fullbleed narrow="{{narrow}}">
@@ -140,8 +140,8 @@ export class MyApp extends PolymerElement {
   }
 
   __locationPathChanged(newValue: string, oldValue: string) {
-    const location = new LocationData(window.location);
-    const paths = LocationUtil.split(location.path);
+    const location = new locationUtil.LocationData(window.location);
+    const paths = locationUtil.split(location.path);
     let page: string;
     if (paths.length === 0) {
       page = 'my-view1';
