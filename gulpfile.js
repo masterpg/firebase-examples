@@ -96,14 +96,14 @@ gulp.task('clean:dev', () => {
 /**
  * webpack(フロント開発環境用)を実行します。
  */
-gulp.task('webpack:front-dev', shell.task([
+gulp.task('build:front-dev', shell.task([
   `webpack --config ./webpack.config.${ENV_DEV}`
 ]));
 
 /**
  * webpack(functions開発環境用)を実行します。
  */
-gulp.task('webpack:func-dev', shell.task([
+gulp.task('build:func-dev', shell.task([
   `cd functions && webpack --config ./webpack.config.${ENV_DEV}`
 ]));
 
@@ -113,7 +113,7 @@ gulp.task('webpack:func-dev', shell.task([
 gulp.task('build:dev', () => {
   sequence(
     'build-dev-resources',
-    ['webpack:front-dev', 'webpack:func-dev']
+    ['build:front-dev', 'build:func-dev']
   );
 });
 
@@ -145,9 +145,9 @@ gulp.task('build', (done) => {
     'clean',
     'imagemin',
     'build-prod-resources',
-    'webpack:front-prod',
+    'build:front-prod',
     'build-service-worker',
-    'webpack:func-prod',
+    'build:func-prod',
     done
   );
 });
@@ -155,7 +155,7 @@ gulp.task('build', (done) => {
 /**
  * ビルド結果を検証するための開発サーバーを起動します。
  */
-gulp.task('serve:build', (done) => {
+gulp.task('serve:prod', (done) => {
   sequence(
     ['firebase-serve'],
     done
@@ -165,14 +165,14 @@ gulp.task('serve:build', (done) => {
 /**
  * webpack(フロント本番環境用)を実行します。
  */
-gulp.task('webpack:front-prod', shell.task([
+gulp.task('build:front-prod', shell.task([
   `webpack --config ./webpack.config.${ENV_PROD}`
 ]));
 
 /**
  * webpack(functions本番環境用)を実行します。
  */
-gulp.task('webpack:func-prod', shell.task([
+gulp.task('build:func-prod', shell.task([
   `cd functions && webpack --config ./webpack.config.${ENV_PROD}`
 ]));
 
