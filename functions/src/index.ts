@@ -4,9 +4,13 @@ import api from './api';
 import * as db from './db';
 import {environment} from './environments/environment';
 
-admin.initializeApp(functions.config().firebase);
+async function init() {
+  console.log('production:', environment.production);
+  admin.initializeApp(functions.config().firebase);
+  await db.init();
+}
 
-console.log('production:', environment.production);
+init();
 
 export {api};
 export const upcaseMessages = db.upcaseMessages;

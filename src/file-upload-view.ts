@@ -1,3 +1,4 @@
+import * as firebase from 'firebase';
 import '@polymer/polymer/polymer';
 import {Element as PolymerElement} from '@polymer/polymer/polymer-element';
 import '@polymer/paper-button/paper-button';
