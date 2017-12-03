@@ -14,7 +14,7 @@ import '@polymer/paper-icon-button/paper-icon-button';
 
 import './firebase-config';
 import {environment} from './environments/environment';
-import locationUtil from './core/location';
+import * as front from 'lived-js-front';
 
 import './auth-view';
 import './file-upload-view';
@@ -140,8 +140,8 @@ export class MyApp extends PolymerElement {
   }
 
   __locationPathChanged(newValue: string, oldValue: string) {
-    const location = new locationUtil.LocationData(window.location);
-    const paths = locationUtil.split(location.path);
+    const location = new front.location.Location(window.location);
+    const paths = front.location.split(location.path);
     let page: string;
     if (paths.length === 0) {
       page = 'my-view1';

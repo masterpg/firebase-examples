@@ -1,4 +1,4 @@
-flow-typed/npm/
+.idea/
 public/
 node_modules/
 *.log

@@ -6,7 +6,8 @@
     "cors": "^2.8.4",
     "express": "^4.15.4",
     "firebase-admin": "^5.4.2",
-    "firebase-functions": "^0.7.1"
+    "firebase-functions": "^0.7.1",
+    "lived-js-core": "https://github.com/masterpg/lived-js-core.git"
   },
   "private": true,
   "devDependencies": {
